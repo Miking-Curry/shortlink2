@@ -80,6 +80,11 @@ public class ShortLinkStatsRecordDTO {
     private Boolean uipFirstFlag;
 
     /**
+     * 点击来源（从哪个页面点击的）
+     */
+    private String referer;
+
+    /**
      * 消息队列唯一标识
      */
     private String keys;

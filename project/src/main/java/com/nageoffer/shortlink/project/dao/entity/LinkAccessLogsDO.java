@@ -79,4 +79,9 @@ public class LinkAccessLogsDO extends BaseDO {
      * 地区
      */
     private String locale;
+
+    /**
+     * 点击来源（从哪个地方点击的）
+     */
+    private String referer;
 }

@@ -62,6 +62,15 @@ public class ShortLinkController {
     }
 
     /**
+     * 测试用例
+     * @return
+     */
+    @GetMapping("/test/hello")
+    public String test() {
+        return "Hello ShortLink";
+    }
+
+    /**
      * 创建短链接
      */
     @PostMapping("/api/short-link/v1/create")

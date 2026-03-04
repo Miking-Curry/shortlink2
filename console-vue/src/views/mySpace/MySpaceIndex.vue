@@ -125,7 +125,7 @@
                 <!-- 当失效后就不能在点击跳转了 -->
                 <el-link type="primary" :underline="false" target="_blank"
                   :disabled="scope?.row?.validDateType === 1 && !isExpire(scope?.row?.validDate)"
-                  :href="'http://' + scope.row.fullShortUrl">{{ scope.row.domain + '/' + scope.row.shortUri }}</el-link>
+                  :href="'http://localhost:8003/' + scope.row.shortUri">{{ scope.row.domain + '/' + scope.row.shortUri }}</el-link>
                 <el-tooltip show-after="500" :content="scope.row.originUrl">
                   <span>{{ scope.row.originUrl }}</span>
                 </el-tooltip>
@@ -136,10 +136,10 @@
             <template #default="scope">
               <div style="display: flex; align-items: center">
                 <!-- 二维码 -->
-                <QRCode :url="'http://' + scope.row.fullShortUrl"></QRCode>
+                <QRCode :url="'http://localhost:8003/' + scope.row.shortUri"></QRCode>
                 <!-- 表格中的复制链接按钮 -->
                 <el-tooltip show-after="500" class="box-item" effect="dark" content="复制链接" placement="bottom-end">
-                  <el-icon @click="copyUrl('http://' + scope.row.fullShortUrl)" class="table-edit copy-url">
+                  <el-icon @click="copyUrl('http://localhost:8003/' + scope.row.shortUri)" class="table-edit copy-url">
                     <Share />
                   </el-icon>
                 </el-tooltip>

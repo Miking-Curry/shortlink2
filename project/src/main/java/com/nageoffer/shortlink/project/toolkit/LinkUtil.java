@@ -69,6 +69,17 @@ public class LinkUtil {
         if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
             ipAddress = request.getRemoteAddr();
         }
+        
+        // 处理IPv6本地回环地址 (0:0:0:0:0:0:0:1 或 ::1)
+        if ("0:0:0:0:0:0:0:1".equals(ipAddress) || "::1".equals(ipAddress)) {
+            ipAddress = "127.0.0.1";
+        }
+        
+        // 处理X-Forwarded-For中包含多个IP的情况，取第一个
+        if (ipAddress != null && ipAddress.contains(",")) {
+            ipAddress = ipAddress.split(",")[0].trim();
+        }
+        
         return ipAddress;
     }
 

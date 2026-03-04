@@ -81,7 +81,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -373,20 +372,19 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
         // 短链接接口的并发量有多少？如何测试？详情查看：https://nageoffer.com/shortlink/question
         // 面试中如何回答短链接是如何跳转长链接？详情查看：https://nageoffer.com/shortlink/question
-        String serverName = request.getServerName();
-        String serverPort = Optional.of(request.getServerPort())
-                .filter(each -> !Objects.equals(each, 80))
-                .map(String::valueOf)
-                .map(each -> ":" + each)
-                .orElse("");
-        String fullShortUrl = serverName + serverPort + "/" + shortUri;
+        // 使用配置的默认域名来构造 fullShortUrl，确保与数据库中创建时的值一致
+        log.info("=== 短链接还原诊断 === createShortLinkDefaultDomain: {}, shortUri: {}", createShortLinkDefaultDomain, shortUri);
+        String fullShortUrl = createShortLinkDefaultDomain + "/" + shortUri;
+        log.info("=== 构造的 fullShortUrl: {}", fullShortUrl);
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
+        log.info("=== Redis 查询结果: {}", originalLink);
         if (StrUtil.isNotBlank(originalLink)) {
             shortLinkStats(buildLinkStatsRecordAndSetUser(fullShortUrl, request, response));
             ((HttpServletResponse) response).sendRedirect(originalLink);
             return;
         }
         boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
+        log.info("=== 布隆过滤器检查结果: {} (fullShortUrl: {})", contains, fullShortUrl);
         if (!contains) {
             ((HttpServletResponse) response).sendRedirect("/page/notfound");
             return;
@@ -413,6 +411,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
                     .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
             ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
+            log.info("=== t_link_goto 查询结果: {} (fullShortUrl: {})", shortLinkGotoDO, fullShortUrl);
             if (shortLinkGotoDO == null) {
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
                 ((HttpServletResponse) response).sendRedirect("/page/notfound");
@@ -472,6 +471,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         String browser = LinkUtil.getBrowser(((HttpServletRequest) request));
         String device = LinkUtil.getDevice(((HttpServletRequest) request));
         String network = LinkUtil.getNetwork(((HttpServletRequest) request));
+        // 获取点击来源（Referer头）
+        String referer = ((HttpServletRequest) request).getHeader("Referer");
+        if (StrUtil.isBlank(referer)) {
+            referer = "Direct";
+        }
         Long uipAdded = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UIP_KEY + fullShortUrl, remoteAddr);
         boolean uipFirstFlag = uipAdded != null && uipAdded > 0L;
         return ShortLinkStatsRecordDTO.builder()
@@ -484,6 +488,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .browser(browser)
                 .device(device)
                 .network(network)
+                .referer(referer)
                 .currentDate(new Date())
                 .build();
     }
