@@ -46,7 +46,8 @@ short-link:
       - /api/short-link/admin/v1/recycle-bin/save
   stats:
     locale:
-      amap-key: 824c511f0997586ea016f979fdb23087
+      amap-key: ${SHORT_LINK_AMAP_KEY:6bb09f52782c146e97ef32db47713624}
+      dev-fallback-ip: 223.5.5.5
   goto-domain:
     white-list:
       enable: false

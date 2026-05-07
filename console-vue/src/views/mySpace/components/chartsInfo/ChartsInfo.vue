@@ -424,15 +424,25 @@ const chinaMapData = ref([
 ])
 // 中国地图中的总次数
 const chinaTotalNum = ref(0)
+const normalizeProvinceName = (locale = '') => {
+  return locale
+    .replace('壮族自治区', '')
+    .replace('回族自治区', '')
+    .replace('维吾尔自治区', '')
+    .replace('特别行政区', '')
+    .replace('自治区', '')
+    .replace('省', '')
+    .replace('市', '')
+}
 // 将请求到的数据转化为中国地图中需要的数据结构
 watch(
   () => props.info?.localeCnStats,
   () => {
+    const localeStats = props.info?.localeCnStats ?? []
     chinaTotalNum.value = 0
-    chinaMapData.value = props.info?.localeCnStats.map((item) => {
-      let { cnt, locale, ratio } = item
-      locale = locale.replace('省', '')
-      locale = locale.replace('市', '')
+    chinaMapData.value = localeStats.map((item) => {
+      const { cnt, ratio } = item
+      const locale = normalizeProvinceName(item.locale)
       chinaTotalNum.value += cnt
       return { name: locale, value: cnt, ratio }
     })

@@ -57,6 +57,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.LOCK_GID_UPDATE_KEY;
 import static com.nageoffer.shortlink.project.common.constant.ShortLinkConstant.AMAP_REMOTE_URL;
@@ -64,6 +65,12 @@ import static com.nageoffer.shortlink.project.common.constant.ShortLinkConstant.
 @Service
 @RequiredArgsConstructor
 public class ShortLinkStatsPersistenceServiceImpl implements ShortLinkStatsPersistenceService {
+
+    private static final String PCONLINE_REMOTE_URL = "https://whois.pconline.com.cn/ipJson.jsp";
+    private static final String LOOPBACK_IP = "127.0.0.1";
+    private static final String IPV6_LOOPBACK_IP = "::1";
+    private static final String FULL_IPV6_LOOPBACK_IP = "0:0:0:0:0:0:0:1";
+    private static final String LOCALHOST = "localhost";
 
     private final ShortLinkMapper shortLinkMapper;
     private final ShortLinkGotoMapper shortLinkGotoMapper;
@@ -79,6 +86,9 @@ public class ShortLinkStatsPersistenceServiceImpl implements ShortLinkStatsPersi
 
     @Value("${short-link.stats.locale.amap-key}")
     private String statsLocaleAmapKey;
+
+    @Value("${short-link.stats.locale.dev-fallback-ip:}")
+    private String statsLocaleDevFallbackIp;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -106,24 +116,17 @@ public class ShortLinkStatsPersistenceServiceImpl implements ShortLinkStatsPersi
                     .date(currentDate)
                     .build();
             linkAccessStatsMapper.shortLinkStats(linkAccessStatsDO);
-            Map<String, Object> localeParamMap = new HashMap<>();
-            localeParamMap.put("key", statsLocaleAmapKey);
-            localeParamMap.put("ip", statsRecord.getRemoteAddr());
-            String localeResultStr = HttpUtil.get(AMAP_REMOTE_URL, localeParamMap);
-            JSONObject localeResultObj = JSON.parseObject(localeResultStr);
-            String infoCode = localeResultObj.getString("infocode");
             String actualProvince = "unknown";
             String actualCity = "unknown";
-            if (StrUtil.isNotBlank(infoCode) && StrUtil.equals(infoCode, "10000")) {
-                String province = localeResultObj.getString("province");
-                boolean unknownFlag = StrUtil.equals(province, "[]");
+            LocaleInfo localeInfo = resolveLocaleInfo(statsRecord.getRemoteAddr());
+            if (localeInfo != null) {
                 LinkLocaleStatsDO linkLocaleStatsDO = LinkLocaleStatsDO.builder()
-                        .province(actualProvince = unknownFlag ? actualProvince : province)
-                        .city(actualCity = unknownFlag ? actualCity : localeResultObj.getString("city"))
-                        .adcode(unknownFlag ? "unknown" : localeResultObj.getString("adcode"))
+                        .province(actualProvince = localeInfo.province())
+                        .city(actualCity = localeInfo.city())
+                        .adcode(localeInfo.adcode())
                         .cnt(1)
                         .fullShortUrl(fullShortUrl)
-                        .country("China")
+                        .country(localeInfo.country())
                         .date(currentDate)
                         .build();
                 linkLocaleStatsMapper.shortLinkLocaleState(linkLocaleStatsDO);
@@ -180,5 +183,88 @@ public class ShortLinkStatsPersistenceServiceImpl implements ShortLinkStatsPersi
         } finally {
             rLock.unlock();
         }
+    }
+
+    private LocaleInfo resolveLocaleInfo(String remoteAddr) {
+        String resolveIp = getLocaleResolveIp(remoteAddr);
+        LocaleInfo amapLocaleInfo = resolveLocaleByAmap(resolveIp);
+        if (amapLocaleInfo != null) {
+            return amapLocaleInfo;
+        }
+        return resolveLocaleByPconline(resolveIp);
+    }
+
+    private String getLocaleResolveIp(String remoteAddr) {
+        if (isLoopbackIp(remoteAddr) && StrUtil.isNotBlank(statsLocaleDevFallbackIp)) {
+            return statsLocaleDevFallbackIp;
+        }
+        return remoteAddr;
+    }
+
+    private boolean isLoopbackIp(String remoteAddr) {
+        return Objects.equals(remoteAddr, LOOPBACK_IP)
+                || Objects.equals(remoteAddr, IPV6_LOOPBACK_IP)
+                || Objects.equals(remoteAddr, FULL_IPV6_LOOPBACK_IP)
+                || Objects.equals(remoteAddr, LOCALHOST);
+    }
+
+    private LocaleInfo resolveLocaleByAmap(String remoteAddr) {
+        if (StrUtil.isBlank(statsLocaleAmapKey) || StrUtil.isBlank(remoteAddr)) {
+            return null;
+        }
+        try {
+            Map<String, Object> localeParamMap = new HashMap<>();
+            localeParamMap.put("key", statsLocaleAmapKey);
+            localeParamMap.put("ip", remoteAddr);
+            String localeResultStr = HttpUtil.get(AMAP_REMOTE_URL, localeParamMap);
+            JSONObject localeResultObj = JSON.parseObject(localeResultStr);
+            String infoCode = localeResultObj.getString("infocode");
+            if (!StrUtil.equals(infoCode, "10000")) {
+                return null;
+            }
+            String province = localeResultObj.getString("province");
+            if (StrUtil.isBlank(province) || StrUtil.equals(province, "[]")) {
+                return null;
+            }
+            return new LocaleInfo(
+                    "China",
+                    province,
+                    localeResultObj.getString("city"),
+                    localeResultObj.getString("adcode")
+            );
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private LocaleInfo resolveLocaleByPconline(String remoteAddr) {
+        if (StrUtil.isBlank(remoteAddr)) {
+            return null;
+        }
+        try {
+            Map<String, Object> localeParamMap = new HashMap<>();
+            localeParamMap.put("ip", remoteAddr);
+            localeParamMap.put("json", "true");
+            String localeResultStr = HttpUtil.get(PCONLINE_REMOTE_URL, localeParamMap);
+            JSONObject localeResultObj = JSON.parseObject(localeResultStr);
+            if (!StrUtil.isBlank(localeResultObj.getString("err"))) {
+                return null;
+            }
+            String province = localeResultObj.getString("pro");
+            if (StrUtil.isBlank(province)) {
+                return null;
+            }
+            return new LocaleInfo(
+                    "China",
+                    province,
+                    localeResultObj.getString("city"),
+                    localeResultObj.getString("cityCode")
+            );
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private record LocaleInfo(String country, String province, String city, String adcode) {
     }
 }
