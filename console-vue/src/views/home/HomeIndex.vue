@@ -3,35 +3,35 @@
     <el-container>
       <el-header height="54px" style="padding: 0">
         <div class="header">
-          <div @click="toMySpace" class="logo">拿个offer-SaaS短链接@马丁</div>
+          <div @click="toMySpace" class="logo">Saas短链接管理平台</div>
           <div style="display: flex; align-items: center">
             <a
               class="link-span"
               style="text-decoration: none"
               target="_blank"
-              href="https://nageoffer.com/shortlink/"
-              >官方文档</a
+              href="https://github.com/Miking-Curry/shortlink/blob/main/README.md"
+              >技术文档</a
             >
-            <a
-              class="link-span"
-              style="text-decoration: none"
-              target="_blank"
-              href="https://nageoffer.com/planet/group/"
-              >加沟通群</a
-            >
+<!--            <a-->
+<!--              class="link-span"-->
+<!--              style="text-decoration: none"-->
+<!--              target="_blank"-->
+<!--              href="https://github.com/Miking-Curry/shortlink1/blob/master/console-vue/%E5%BE%AE%E4%BF%A1.jpg"-->
+<!--              >本人微信</a-->
+<!--            >-->
             <a
                 class="link-span"
                 style="text-decoration: none"
                 target="_blank"
-                href="https://nageoffer.com/shortlink/video/"
-            >🔥视频教程</a
+                href="https://github.com/Miking-Curry/shortlink1"
+            >🔥项目地址</a
             >
             <a
                 class="link-span"
                 style="text-decoration: none"
                 target="_blank"
                 href="http://shortlink.nageoffer.com"
-            >演示环境</a
+            >在线演示</a
             >
             <el-dropdown>
               <div class="block">
