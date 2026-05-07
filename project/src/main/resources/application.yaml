@@ -27,16 +27,18 @@ short-link:
   stats:
     locale:
       amap-key: ${SHORT_LINK_AMAP_KEY:6bb09f52782c146e97ef32db47713624}
-      dev-fallback-ip: 223.5.5.5
+      dev-fallback-ip: 14.215.177.39
   goto-domain:
     white-list:
       enable: true
-      names: '拿个offer,知乎,掘金,博客园'
+      names: '拿个offer,知乎,掘金,博客园,GitHub,哔哩哔哩'
       details:
         - nageoffer.com
         - zhihu.com
         - juejin.cn
         - cnblogs.com
+        - github.com
+        - bilibili.com
 
 mybatis-plus:
   configuration:
