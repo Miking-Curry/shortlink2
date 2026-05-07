@@ -110,8 +110,8 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             "SELECT " +
             "    tlal.user, " +
             "    CASE " +
-            "        WHEN MIN(tlal.create_time) BETWEEN #{startDate} AND #{endDate} THEN '新访客' " +
-            "        ELSE '老访客' " +
+            "        WHEN MIN(tlal.create_time) BETWEEN #{startDate} AND #{endDate} THEN 'newUser' " +
+            "        ELSE 'oldUser' " +
             "    END AS uvType " +
             "FROM " +
             "    t_link tl INNER JOIN " +
@@ -144,8 +144,8 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             "SELECT " +
             "    tlal.user, " +
             "    CASE " +
-            "        WHEN MIN(tlal.create_time) BETWEEN #{startDate} AND #{endDate} THEN '新访客' " +
-            "        ELSE '老访客' " +
+            "        WHEN MIN(tlal.create_time) BETWEEN #{startDate} AND #{endDate} THEN 'newUser' " +
+            "        ELSE 'oldUser' " +
             "    END AS uvType " +
             "FROM " +
             "    t_link tl INNER JOIN " +

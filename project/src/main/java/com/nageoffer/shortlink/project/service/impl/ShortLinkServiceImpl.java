@@ -17,6 +17,7 @@
 
 package com.nageoffer.shortlink.project.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
@@ -90,7 +91,9 @@ import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.G
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.LOCK_GID_UPDATE_KEY;
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.LOCK_GOTO_SHORT_LINK_KEY;
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.SHORT_LINK_CREATE_LOCK_KEY;
+import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.SHORT_LINK_STATS_UIP_DAY_KEY;
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.SHORT_LINK_STATS_UIP_KEY;
+import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.SHORT_LINK_STATS_UV_DAY_KEY;
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.SHORT_LINK_STATS_UV_KEY;
 
 /**
@@ -442,8 +445,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     private ShortLinkStatsRecordDTO buildLinkStatsRecordAndSetUser(String fullShortUrl, ServletRequest request, ServletResponse response) {
         AtomicBoolean uvFirstFlag = new AtomicBoolean();
+        AtomicBoolean todayUvFirstFlag = new AtomicBoolean();
         Cookie[] cookies = ((HttpServletRequest) request).getCookies();
         AtomicReference<String> uv = new AtomicReference<>();
+        String currentDate = DateUtil.formatDate(new Date());
+        String uvDayKey = SHORT_LINK_STATS_UV_DAY_KEY + fullShortUrl + ":" + currentDate;
         Runnable addResponseCookieTask = () -> {
             uv.set(UUID.fastUUID().toString());
             Cookie uvCookie = new Cookie("uv", uv.get());
@@ -452,6 +458,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ((HttpServletResponse) response).addCookie(uvCookie);
             uvFirstFlag.set(Boolean.TRUE);
             stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY + fullShortUrl, uv.get());
+            todayUvFirstFlag.set(Boolean.TRUE);
+            stringRedisTemplate.opsForSet().add(uvDayKey, uv.get());
+            stringRedisTemplate.expire(uvDayKey, 2, TimeUnit.DAYS);
         };
         if (ArrayUtil.isNotEmpty(cookies)) {
             Arrays.stream(cookies)
@@ -462,6 +471,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         uv.set(each);
                         Long uvAdded = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY + fullShortUrl, each);
                         uvFirstFlag.set(uvAdded != null && uvAdded > 0L);
+                        Long todayUvAdded = stringRedisTemplate.opsForSet().add(uvDayKey, each);
+                        todayUvFirstFlag.set(todayUvAdded != null && todayUvAdded > 0L);
+                        stringRedisTemplate.expire(uvDayKey, 2, TimeUnit.DAYS);
                     }, addResponseCookieTask);
         } else {
             addResponseCookieTask.run();
@@ -478,11 +490,17 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         }
         Long uipAdded = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UIP_KEY + fullShortUrl, remoteAddr);
         boolean uipFirstFlag = uipAdded != null && uipAdded > 0L;
+        String uipDayKey = SHORT_LINK_STATS_UIP_DAY_KEY + fullShortUrl + ":" + currentDate;
+        Long todayUipAdded = stringRedisTemplate.opsForSet().add(uipDayKey, remoteAddr);
+        boolean todayUipFirstFlag = todayUipAdded != null && todayUipAdded > 0L;
+        stringRedisTemplate.expire(uipDayKey, 2, TimeUnit.DAYS);
         return ShortLinkStatsRecordDTO.builder()
                 .fullShortUrl(fullShortUrl)
                 .uv(uv.get())
                 .uvFirstFlag(uvFirstFlag.get())
                 .uipFirstFlag(uipFirstFlag)
+                .todayUvFirstFlag(todayUvFirstFlag.get())
+                .todayUipFirstFlag(todayUipFirstFlag)
                 .remoteAddr(remoteAddr)
                 .os(os)
                 .browser(browser)

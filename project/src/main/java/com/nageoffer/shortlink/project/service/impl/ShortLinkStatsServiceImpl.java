@@ -475,7 +475,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
                     .findFirst()
                     .map(item -> item.get("uvType"))
                     .map(Object::toString)
-                    .orElse("旧访客");
+                    .orElse("oldUser");
             each.setUvType(uvType);
         });
         return actualResult;
@@ -505,7 +505,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
                     .findFirst()
                     .map(item -> item.get("uvType"))
                     .map(Object::toString)
-                    .orElse("旧访客");
+                    .orElse("oldUser");
             each.setUvType(uvType);
         });
         return actualResult;

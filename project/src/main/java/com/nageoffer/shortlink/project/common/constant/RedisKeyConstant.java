@@ -59,6 +59,16 @@ public class RedisKeyConstant {
     public static final String SHORT_LINK_STATS_UIP_KEY = "short-link:stats:uip:";
 
     /**
+     * 短链接统计判断是否今日新用户缓存标识
+     */
+    public static final String SHORT_LINK_STATS_UV_DAY_KEY = "short-link:stats:uv:day:";
+
+    /**
+     * 短链接统计判断是否今日新 IP 缓存标识
+     */
+    public static final String SHORT_LINK_STATS_UIP_DAY_KEY = "short-link:stats:uip:day:";
+
+    /**
      * 短链接监控消息保存队列 Topic 缓存标识
      */
     public static final String SHORT_LINK_STATS_STREAM_TOPIC_KEY = "short-link:stats-stream";

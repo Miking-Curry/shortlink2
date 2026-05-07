@@ -179,7 +179,11 @@
             </template>
           </el-table-column>
 
-          <el-table-column v-if="!isGroup" prop="uvType" label="访客类型" />
+          <el-table-column v-if="!isGroup" prop="uvType" label="访客类型">
+            <template #default="scope">
+              <span>{{ formatUvType(scope?.row?.uvType) }}</span>
+            </template>
+          </el-table-column>
         </el-table>
         <!-- 分页器 -->
         <div class="pagination-block">
@@ -331,6 +335,12 @@ const getUrl4 = (img) => {
   } else {
     return wifi
   }
+}
+const formatUvType = (uvType) => {
+  if (uvType === 'newUser') {
+    return '新访客'
+  }
+  return '老访客'
 }
 const dateValue = ref([getLastWeekFormatDate(), getTodayFormatDate()])
 const emit = defineEmits(['changeTime', 'changePage'])

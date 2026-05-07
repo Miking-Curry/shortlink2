@@ -80,6 +80,16 @@ public class ShortLinkStatsRecordDTO {
     private Boolean uipFirstFlag;
 
     /**
+     * 当日 UV 访问标识
+     */
+    private Boolean todayUvFirstFlag;
+
+    /**
+     * 当日 UIP 访问标识
+     */
+    private Boolean todayUipFirstFlag;
+
+    /**
      * 点击来源（从哪个页面点击的）
      */
     private String referer;

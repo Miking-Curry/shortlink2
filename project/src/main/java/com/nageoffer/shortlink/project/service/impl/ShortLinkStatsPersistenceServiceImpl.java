@@ -174,8 +174,8 @@ public class ShortLinkStatsPersistenceServiceImpl implements ShortLinkStatsPersi
             shortLinkMapper.incrementStats(gid, fullShortUrl, 1, statsRecord.getUvFirstFlag() ? 1 : 0, statsRecord.getUipFirstFlag() ? 1 : 0);
             LinkStatsTodayDO linkStatsTodayDO = LinkStatsTodayDO.builder()
                     .todayPv(1)
-                    .todayUv(statsRecord.getUvFirstFlag() ? 1 : 0)
-                    .todayUip(statsRecord.getUipFirstFlag() ? 1 : 0)
+                    .todayUv(statsRecord.getTodayUvFirstFlag() ? 1 : 0)
+                    .todayUip(statsRecord.getTodayUipFirstFlag() ? 1 : 0)
                     .fullShortUrl(fullShortUrl)
                     .date(currentDate)
                     .build();
