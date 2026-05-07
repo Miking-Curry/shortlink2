@@ -167,7 +167,11 @@
         <el-table :data="tableInfo?.data?.data?.records" style="width: 100%; height: calc(100vh - 300px)">
           <el-table-column prop="createTime" label="访问时间" width="160" />
           <el-table-column prop="ip" label="访问IP" width="140" />
-          <el-table-column prop="locale" label="访客地区"> </el-table-column>
+          <el-table-column prop="locale" label="访客地区">
+            <template #default="scope">
+              <span>{{ formatLocale(scope?.row?.locale) }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="device" label="设备信息">
             <template #default="scope">
               <div class="flex-box">
@@ -341,6 +345,23 @@ const formatUvType = (uvType) => {
     return '新访客'
   }
   return '老访客'
+}
+const formatLocale = (locale) => {
+  if (!locale) {
+    return ''
+  }
+  return locale
+    .split('-')
+    .map((item) => {
+      if (item === 'China') {
+        return '中国'
+      }
+      if (item === 'unknown') {
+        return '未知'
+      }
+      return item
+    })
+    .join('-')
 }
 const dateValue = ref([getLastWeekFormatDate(), getTodayFormatDate()])
 const emit = defineEmits(['changeTime', 'changePage'])
