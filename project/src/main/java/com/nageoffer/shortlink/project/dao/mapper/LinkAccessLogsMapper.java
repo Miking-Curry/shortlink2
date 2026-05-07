@@ -138,6 +138,35 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
     );
 
     /**
+     * 获取单链用户首条访问记录 ID
+     */
+    @Select("<script> " +
+            "SELECT " +
+            "    tlal.user, " +
+            "    MIN(tlal.id) AS firstRecordId " +
+            "FROM " +
+            "    t_link tl INNER JOIN " +
+            "    t_link_access_logs tlal ON tl.full_short_url = tlal.full_short_url " +
+            "WHERE " +
+            "    tlal.full_short_url = #{fullShortUrl} " +
+            "    AND tl.gid = #{gid} " +
+            "    AND tl.del_flag = '0' " +
+            "    AND tl.enable_status = #{enableStatus} " +
+            "    AND tlal.user IN " +
+            "    <foreach item='item' index='index' collection='userAccessLogsList' open='(' separator=',' close=')'> " +
+            "        #{item} " +
+            "    </foreach> " +
+            "GROUP BY " +
+            "    tlal.user;" +
+            "</script>")
+    List<Map<String, Object>> selectFirstAccessRecordIdByUsers(
+            @Param("gid") String gid,
+            @Param("fullShortUrl") String fullShortUrl,
+            @Param("enableStatus") Integer enableStatus,
+            @Param("userAccessLogsList") List<String> userAccessLogsList
+    );
+
+    /**
      * 获取分组用户信息是否新老访客
      */
     @Select("<script> " +
@@ -165,6 +194,32 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             @Param("gid") String gid,
             @Param("startDate") String startDate,
             @Param("endDate") String endDate,
+            @Param("userAccessLogsList") List<String> userAccessLogsList
+    );
+
+    /**
+     * 获取分组用户首条访问记录 ID
+     */
+    @Select("<script> " +
+            "SELECT " +
+            "    tlal.user, " +
+            "    MIN(tlal.id) AS firstRecordId " +
+            "FROM " +
+            "    t_link tl INNER JOIN " +
+            "    t_link_access_logs tlal ON tl.full_short_url = tlal.full_short_url " +
+            "WHERE " +
+            "    tl.gid = #{gid} " +
+            "    AND tl.del_flag = '0' " +
+            "    AND tl.enable_status = '0' " +
+            "    AND tlal.user IN " +
+            "    <foreach item='item' index='index' collection='userAccessLogsList' open='(' separator=',' close=')'> " +
+            "        #{item} " +
+            "    </foreach> " +
+            "GROUP BY " +
+            "    tlal.user;" +
+            "</script>")
+    List<Map<String, Object>> selectGroupFirstAccessRecordIdByUsers(
+            @Param("gid") String gid,
             @Param("userAccessLogsList") List<String> userAccessLogsList
     );
 

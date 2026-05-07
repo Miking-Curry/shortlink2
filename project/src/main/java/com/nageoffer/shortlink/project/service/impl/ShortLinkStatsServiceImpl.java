@@ -457,27 +457,29 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         if (CollUtil.isEmpty(linkAccessLogsDOIPage.getRecords())) {
             return new Page<>();
         }
+        List<LinkAccessLogsDO> accessLogsRecords = linkAccessLogsDOIPage.getRecords();
         IPage<ShortLinkStatsAccessRecordRespDTO> actualResult = linkAccessLogsDOIPage.convert(each -> BeanUtil.toBean(each, ShortLinkStatsAccessRecordRespDTO.class));
         List<String> userAccessLogsList = actualResult.getRecords().stream()
                 .map(ShortLinkStatsAccessRecordRespDTO::getUser)
                 .toList();
-        List<Map<String, Object>> uvTypeList = linkAccessLogsMapper.selectUvTypeByUsers(
+        List<Map<String, Object>> firstAccessRecordList = linkAccessLogsMapper.selectFirstAccessRecordIdByUsers(
                 requestParam.getGid(),
                 requestParam.getFullShortUrl(),
                 requestParam.getEnableStatus(),
-                requestParam.getStartDate(),
-                requestParam.getEndDate(),
                 userAccessLogsList
         );
-        actualResult.getRecords().forEach(each -> {
-            String uvType = uvTypeList.stream()
-                    .filter(item -> Objects.equals(each.getUser(), item.get("user")))
-                    .findFirst()
-                    .map(item -> item.get("uvType"))
-                    .map(Object::toString)
-                    .orElse("oldUser");
-            each.setUvType(uvType);
-        });
+        Map<String, Long> firstAccessRecordIdMap = new HashMap<>();
+        firstAccessRecordList.forEach(each -> firstAccessRecordIdMap.put(
+                each.get("user").toString(),
+                Long.parseLong(each.get("firstRecordId").toString())
+        ));
+        for (int i = 0; i < actualResult.getRecords().size(); i++) {
+            ShortLinkStatsAccessRecordRespDTO actualRecord = actualResult.getRecords().get(i);
+            LinkAccessLogsDO accessLogsRecord = accessLogsRecords.get(i);
+            Long firstAccessRecordId = firstAccessRecordIdMap.get(actualRecord.getUser());
+            String uvType = Objects.equals(accessLogsRecord.getId(), firstAccessRecordId) ? "newUser" : "oldUser";
+            actualRecord.setUvType(uvType);
+        }
         return actualResult;
     }
 
@@ -488,26 +490,28 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         if (CollUtil.isEmpty(linkAccessLogsDOIPage.getRecords())) {
             return new Page<>();
         }
+        List<LinkAccessLogsDO> accessLogsRecords = linkAccessLogsDOIPage.getRecords();
         IPage<ShortLinkStatsAccessRecordRespDTO> actualResult = linkAccessLogsDOIPage
                 .convert(each -> BeanUtil.toBean(each, ShortLinkStatsAccessRecordRespDTO.class));
         List<String> userAccessLogsList = actualResult.getRecords().stream()
                 .map(ShortLinkStatsAccessRecordRespDTO::getUser)
                 .toList();
-        List<Map<String, Object>> uvTypeList = linkAccessLogsMapper.selectGroupUvTypeByUsers(
+        List<Map<String, Object>> firstAccessRecordList = linkAccessLogsMapper.selectGroupFirstAccessRecordIdByUsers(
                 requestParam.getGid(),
-                requestParam.getStartDate(),
-                requestParam.getEndDate(),
                 userAccessLogsList
         );
-        actualResult.getRecords().forEach(each -> {
-            String uvType = uvTypeList.stream()
-                    .filter(item -> Objects.equals(each.getUser(), item.get("user")))
-                    .findFirst()
-                    .map(item -> item.get("uvType"))
-                    .map(Object::toString)
-                    .orElse("oldUser");
-            each.setUvType(uvType);
-        });
+        Map<String, Long> firstAccessRecordIdMap = new HashMap<>();
+        firstAccessRecordList.forEach(each -> firstAccessRecordIdMap.put(
+                each.get("user").toString(),
+                Long.parseLong(each.get("firstRecordId").toString())
+        ));
+        for (int i = 0; i < actualResult.getRecords().size(); i++) {
+            ShortLinkStatsAccessRecordRespDTO actualRecord = actualResult.getRecords().get(i);
+            LinkAccessLogsDO accessLogsRecord = accessLogsRecords.get(i);
+            Long firstAccessRecordId = firstAccessRecordIdMap.get(actualRecord.getUser());
+            String uvType = Objects.equals(accessLogsRecord.getId(), firstAccessRecordId) ? "newUser" : "oldUser";
+            actualRecord.setUvType(uvType);
+        }
         return actualResult;
     }
 

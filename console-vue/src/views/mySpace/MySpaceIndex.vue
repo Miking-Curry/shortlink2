@@ -511,7 +511,8 @@ const changePage = async (page) => {
     tableRes = await API.smallLinkPage.queryLinkTable({
       gid: tableGid.value,
       fullShortUrl: tableFullShortUrl.value,
-      ...statsFormData
+      ...statsFormData,
+      enableStatus: visitLink.enableStatus
     })
   }
   tableInfo.value = tableRes
