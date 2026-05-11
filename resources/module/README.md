@@ -39,6 +39,7 @@ https://www.yuque.com/magestack/shortlink/fhp79exke7z9lfih
 - Redis：`127.0.0.1:6380`
 - Redis 密码：`123456`
 - Nacos：`127.0.0.1:8848`
+- Maven: `3.9.15`
 
 后端端口：
 
