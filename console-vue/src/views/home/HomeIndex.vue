@@ -24,15 +24,15 @@
                 style="text-decoration: none"
                 target="_blank"
                 href="https://github.com/Miking-Curry/shortlink1"
-            >🔥项目地址</a
+            >项目介绍</a
             >
-            <a
-                class="link-span"
-                style="text-decoration: none"
-                target="_blank"
-                href="http://shortlink.nageoffer.com"
-            >在线演示</a
-            >
+<!--            <a-->
+<!--                class="link-span"-->
+<!--                style="text-decoration: none"-->
+<!--                target="_blank"-->
+<!--                href="http://shortlink.nageoffer.com"-->
+<!--            >在线演示</a-->
+<!--            >-->
             <el-dropdown>
               <div class="block">
                 <span
