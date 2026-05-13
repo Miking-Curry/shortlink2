@@ -4,7 +4,7 @@
       <el-header height="54px" style="padding: 0">
         <div class="header">
           <div @click="toMySpace" class="logo">Saas短链接管理平台</div>
-          <div style="display: flex; align-items: center">
+          <div class="header-actions">
             <a
               class="link-span"
               style="text-decoration: none"
@@ -33,11 +33,15 @@
 <!--                href="http://shortlink.nageoffer.com"-->
 <!--            >在线演示</a-->
 <!--            >-->
+            <div class="notice-icon">
+              <el-icon><Bell /></el-icon>
+            </div>
             <el-dropdown>
-              <div class="block">
+              <div class="block profile-entry">
+                <div class="avatar-circle">{{ avatarText }}</div>
                 <span
-                    class="name-span"
-                    style="text-decoration: none"
+                  class="name-span"
+                  style="text-decoration: none"
                 >{{username}}</span
                 >
               </div>
@@ -112,11 +116,13 @@ const toMySpace = () => {
   router.push('/home' + '/space')
 }
 const username = ref('')
+const avatarText = ref('A')
 onMounted(async () => {
   const actualUsername = getUsername()
   const res = await API.user.queryUserInfo(actualUsername)
   // firstName.value = res?.data?.data?.realName?.split('')[0]
   username.value = truncateText(actualUsername, 8)
+  avatarText.value = actualUsername?.slice(0, 1)?.toUpperCase() || 'A'
 })
 const extractColorByName = (name) => {
   var temp = []
@@ -154,7 +160,7 @@ const truncateText = (text, maxLength) => {
 .header {
   color: rgba(0,0,0,.85);
   background-color: #252b30;
-  padding: 0 0 0 20px;
+  padding: 0 24px 0 20px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -166,6 +172,11 @@ const truncateText = (text, maxLength) => {
     align-items: center;
     border: 0px;
   }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
 }
 
 .content-box {
@@ -209,15 +220,43 @@ const truncateText = (text, maxLength) => {
 
 .name-span {
   color: #fff;
-  opacity: .6;
-  margin-right: 30px;
-  font-size: 12px;
+  opacity: .9;
+  margin-right: 0;
+  font-size: 14px;
+  font-weight: 600;
   font-family: 'Helvetica Neue', Helvetica, STHeiTi, Arial, sans-serif;
   cursor: pointer;
   text-decoration: none;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.profile-entry {
+  gap: 10px;
+}
+
+.notice-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 28px;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #dce8ff;
+  color: #4b67d1;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .avatar {
