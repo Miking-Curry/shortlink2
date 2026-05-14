@@ -23,9 +23,11 @@ import com.nageoffer.shortlink.admin.config.OpenFeignConfiguration;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinSaveReqDTO;
+import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkAiCopywritingReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkBatchCreateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
+import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkAiCopywritingRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkBatchCreateRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
@@ -67,6 +69,15 @@ public interface ShortLinkActualRemoteService {
      */
     @PostMapping("/api/short-link/v1/create/batch")
     Result<ShortLinkBatchCreateRespDTO> batchCreateShortLink(@RequestBody ShortLinkBatchCreateReqDTO requestParam);
+
+    /**
+     * 生成 AI 分享文案
+     *
+     * @param requestParam AI 文案请求参数
+     * @return AI 文案响应
+     */
+    @PostMapping("/api/short-link/v1/ai/copywriting")
+    Result<ShortLinkAiCopywritingRespDTO> generateCopywriting(@RequestBody ShortLinkAiCopywritingReqDTO requestParam);
 
     /**
      * 修改短链接

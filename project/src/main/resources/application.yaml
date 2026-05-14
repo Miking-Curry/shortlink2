@@ -24,6 +24,10 @@ spring:
 short-link:
   domain:
     default: nurl.ink:8003
+  ai:
+    deepseek:
+      api-key: "sk-9668d20594b54d3a99d8fa346728cdde"
+      model: deepseek-v4-flash
   stats:
     locale:
       amap-key: ${SHORT_LINK_AMAP_KEY:6bb09f52782c146e97ef32db47713624}

@@ -306,6 +306,11 @@
                 </el-tooltip>
                 <!-- 正常页面展示编辑和删除 -->
                 <template v-if="selectedIndex !== -1">
+                  <div class="ai-copywriting-entry" @click="openAiCopywritingDialog(scope.row)">
+                    <el-icon class="ai-copywriting-entry__icon">
+                      <Promotion />
+                    </el-icon>
+                  </div>
                   <!-- 表格中的编辑按钮 -->
                   <el-tooltip show-after="500" class="box-item" effect="dark" content="编辑" placement="bottom-end">
                     <el-icon @click="editLink(scope.row)" class="table-edit">
@@ -424,6 +429,40 @@
       <CreateLinks ref="createLink2Ref" :groupInfo="editableTabs" @onSubmit="addLink" @cancel="cancelAddLink"
         :defaultGid="pageParams.gid"></CreateLinks>
     </el-dialog>
+    <el-dialog v-model="isAiCopywritingVisible" title="AI 智能文案" width="560px">
+      <div class="ai-copywriting-dialog">
+        <div class="ai-copywriting-dialog__meta">
+          <span class="ai-copywriting-dialog__title">{{ aiCopywritingForm.title || '--' }}</span>
+          <span class="ai-copywriting-dialog__link">{{ aiCopywritingForm.shortUrl || '--' }}</span>
+        </div>
+        <div class="ai-copywriting-platforms">
+          <button
+            v-for="platform in aiPlatforms"
+            :key="platform"
+            type="button"
+            class="ai-copywriting-platform"
+            :class="{ 'is-active': aiCopywritingForm.platform === platform }"
+            @click="aiCopywritingForm.platform = platform"
+          >
+            {{ platform }}
+          </button>
+        </div>
+        <div class="ai-copywriting-result" :class="{ 'is-error': !!aiCopywritingError }" v-loading="aiCopywritingLoading">
+          <span v-if="aiCopywritingError">{{ aiCopywritingError }}</span>
+          <span v-else-if="aiCopywritingResult">{{ aiCopywritingResult }}</span>
+          <span v-else>点击“开始生成”获取 AI 分享文案</span>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer ai-copywriting-footer">
+          <el-button @click="isAiCopywritingVisible = false">取消</el-button>
+          <el-button @click="generateAiCopywriting" :loading="aiCopywritingLoading">
+            {{ aiCopywritingResult ? '重新生成' : '开始生成' }}
+          </el-button>
+          <el-button type="primary" @click="copyAiCopywriting" :disabled="!aiCopywritingResult">复制文案</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -457,6 +496,17 @@ const createLink2Ref = ref()
 let selectedIndex = ref(0)
 const editableTabs = ref([])
 const searchKeyword = ref('')
+const aiPlatforms = ['朋友圈', '微博', '小红书', '微信群']
+const isAiCopywritingVisible = ref(false)
+const aiCopywritingLoading = ref(false)
+const aiCopywritingResult = ref('')
+const aiCopywritingError = ref('')
+const aiCopywritingForm = reactive({
+  platform: aiPlatforms[0],
+  title: '',
+  originUrl: '',
+  shortUrl: ''
+})
 const groupOverviewStats = reactive({
   shortLinkCount: 0,
   pv: '--',
@@ -736,6 +786,68 @@ const resetSearch = () => {
   pageParams.current = 1
   pageParams.keyword = null
   queryPage()
+}
+
+const openAiCopywritingDialog = (row) => {
+  const shortUrl = row?.domain && row?.shortUri ? `${row.domain}/${row.shortUri}` : ''
+  aiCopywritingForm.platform = aiPlatforms[0]
+  aiCopywritingForm.title = row?.describe || shortUrl
+  aiCopywritingForm.originUrl = row?.originUrl || ''
+  aiCopywritingForm.shortUrl = shortUrl
+  aiCopywritingResult.value = ''
+  aiCopywritingError.value = ''
+  isAiCopywritingVisible.value = true
+}
+
+const generateAiCopywriting = async () => {
+  aiCopywritingLoading.value = true
+  aiCopywritingError.value = ''
+  try {
+    const res = await API.ai.generateCopywriting({
+      platform: aiCopywritingForm.platform,
+      title: aiCopywritingForm.title,
+      originUrl: aiCopywritingForm.originUrl,
+      shortUrl: aiCopywritingForm.shortUrl
+    })
+    if (res?.data?.success) {
+      const content = res?.data?.data?.content?.trim?.() || ''
+      if (!content) {
+        aiCopywritingError.value = 'AI 文案生成失败，请稍后重试'
+        aiCopywritingResult.value = ''
+        return
+      }
+      aiCopywritingResult.value = content
+      return
+    }
+    aiCopywritingError.value = res?.data?.message || 'AI 文案生成失败，请稍后重试'
+    aiCopywritingResult.value = ''
+  } catch (error) {
+    aiCopywritingError.value = error?.response?.data?.message || 'AI 文案生成失败，请稍后重试'
+    aiCopywritingResult.value = ''
+  } finally {
+    aiCopywritingLoading.value = false
+  }
+}
+
+const copyAiCopywriting = async () => {
+  if (!aiCopywritingResult.value) {
+    return
+  }
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(aiCopywritingResult.value)
+      ElMessage.success('文案复制成功')
+      return
+    }
+  } catch (error) {
+  }
+  const input = document.createElement('input')
+  input.value = aiCopywritingResult.value
+  document.body.appendChild(input)
+  input.select()
+  document.execCommand('Copy')
+  input.remove()
+  ElMessage.success('文案复制成功')
 }
 
 const handleSizeChange = () => {
@@ -1257,6 +1369,130 @@ const removeLink = (data) => {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.ai-copywriting-entry {
+  width: 32px;
+  height: 32px;
+  margin-right: 14px;
+  border: 1px solid #e6e8ff;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fafaff 0%, #f3f4ff 100%);
+  color: #7c82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.ai-copywriting-entry:hover {
+  border-color: #cdd3ff;
+  background: #eef0ff;
+  color: #6366f1;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+  transform: translateY(-1px);
+}
+
+.ai-copywriting-entry__icon {
+  font-size: 15px;
+}
+
+.ai-copywriting-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ai-copywriting-dialog__meta {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  border: 1px solid #dbe6ff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-copywriting-dialog__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #172554;
+  line-height: 1.5;
+}
+
+.ai-copywriting-dialog__link {
+  font-size: 13px;
+  color: #4f46e5;
+  word-break: break-all;
+}
+
+.ai-copywriting-platforms {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-copywriting-platform {
+  height: 40px;
+  border: 1px solid #d9e2f2;
+  border-radius: 12px;
+  background: #fff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ai-copywriting-platform.is-active {
+  color: #4f46e5;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.08);
+}
+
+.ai-copywriting-result {
+  min-height: 178px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #dbe4f3;
+  background: #f8fafc;
+  color: #334155;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+
+.ai-copywriting-result.is-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.ai-copywriting-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+:deep(.el-dialog__header) {
+  padding: 22px 24px 8px;
+}
+
+:deep(.el-dialog__title) {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
 }
 
 .over-text {
