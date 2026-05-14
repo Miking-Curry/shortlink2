@@ -62,6 +62,41 @@
       <div class="table-box">
         <!-- 默认展示创建短链输入框和按钮 -->
         <div v-if="!isRecycleBin" class="buttons-box">
+          <div class="overview-cards">
+            <div class="overview-card overview-card--blue">
+              <div class="overview-card__icon overview-card__icon--blue">
+                <el-icon><Link /></el-icon>
+              </div>
+              <div class="overview-card__content">
+              <span class="overview-card__label">当前分组短链数</span>
+              <span class="overview-card__value">{{ groupOverviewStats.shortLinkCount }}</span>
+              </div>
+            </div>
+            <div class="overview-card overview-card--green">
+              <div class="overview-card__icon overview-card__icon--green">
+                <el-icon><Promotion /></el-icon>
+              </div>
+              <div class="overview-card__content">
+              <span class="overview-card__label">近7天访问次数</span>
+              <span class="overview-card__value">
+                {{ groupOverviewStats.loading ? '--' : groupOverviewStats.pv }}
+                <span class="overview-card__unit">次</span>
+              </span>
+            </div>
+            </div>
+            <div class="overview-card overview-card--purple">
+              <div class="overview-card__icon overview-card__icon--purple">
+                <el-icon><User /></el-icon>
+              </div>
+              <div class="overview-card__content">
+              <span class="overview-card__label">近7天独立访客</span>
+              <span class="overview-card__value">
+                {{ groupOverviewStats.loading ? '--' : groupOverviewStats.uv }}
+                <span class="overview-card__unit">人</span>
+              </span>
+            </div>
+            </div>
+          </div>
           <div class="toolbar-shell">
             <div class="toolbar-summary">
               <span class="toolbar-title">短链列表</span>
@@ -422,6 +457,12 @@ const createLink2Ref = ref()
 let selectedIndex = ref(0)
 const editableTabs = ref([])
 const searchKeyword = ref('')
+const groupOverviewStats = reactive({
+  shortLinkCount: 0,
+  pv: '--',
+  uv: '--',
+  loading: false
+})
 // 添加弹窗关闭后重新请求一下页面数据
 const afterAddLink = () => {
   setTimeout(() => {
@@ -598,6 +639,7 @@ watch(
     // -1为回收站，不需要重新请求正常页面数据
     if (newValue !== -1 && newValue !== -2) {
       queryPage()
+      refreshGroupOverviewStats()
     }
   }
 )
@@ -605,7 +647,12 @@ const handleVisibilityChange = () => {
   if (document.visibilityState !== 'visible') {
     return
   }
-  !isRecycleBin.value ? queryPage() : queryRecycleBinPage()
+  if (!isRecycleBin.value) {
+    queryPage()
+    refreshGroupOverviewStats()
+    return
+  }
+  queryRecycleBinPage()
 }
 onMounted(() => {
   initSortable('sortOptions')
@@ -629,6 +676,42 @@ watch(
   }
 )
 const totalNums = ref(0)
+const refreshGroupOverviewStats = async () => {
+  const currentGroup = editableTabs.value?.[selectedIndex.value]
+  groupOverviewStats.shortLinkCount = currentGroup?.shortLinkCount ?? 0
+  if (!currentGroup?.gid || isRecycleBin.value || selectedIndex.value < 0) {
+    groupOverviewStats.loading = false
+    groupOverviewStats.pv = '--'
+    groupOverviewStats.uv = '--'
+    return
+  }
+  const currentGid = currentGroup.gid
+  groupOverviewStats.loading = true
+  try {
+    const res = await API.group.queryGroupStats({
+      gid: currentGid,
+      startDate: getLastWeekFormatDate(),
+      endDate: getTodayFormatDate()
+    })
+    if (currentGid !== editableTabs.value?.[selectedIndex.value]?.gid || isRecycleBin.value) {
+      return
+    }
+    if (res?.data?.success) {
+      groupOverviewStats.pv = res?.data?.data?.pv ?? 0
+      groupOverviewStats.uv = res?.data?.data?.uv ?? 0
+    } else {
+      groupOverviewStats.pv = '--'
+      groupOverviewStats.uv = '--'
+    }
+  } catch (error) {
+    groupOverviewStats.pv = '--'
+    groupOverviewStats.uv = '--'
+  } finally {
+    if (currentGid === editableTabs.value?.[selectedIndex.value]?.gid || isRecycleBin.value) {
+      groupOverviewStats.loading = false
+    }
+  }
+}
 // 数据变化后更新当前页面
 const queryPage = async () => {
   pageParams.gid = editableTabs.value?.[selectedIndex.value]?.gid
@@ -668,6 +751,7 @@ const getGroupInfo = async (fn) => {
   const res = await API.group.queryGroup()
   editableTabs.value = res.data?.data?.reverse()
   fn && fn()
+  !isRecycleBin.value && refreshGroupOverviewStats()
 }
 getGroupInfo(queryPage)
 
@@ -699,8 +783,8 @@ const recycleBin = () => {
 }
 // 点击分组中的选项
 const changeSelectIndex = (index) => {
-  selectedIndex.value = index
   isRecycleBin.value = false
+  selectedIndex.value = index
   // 对应分组的数据请求
 }
 // 添加分组相关
@@ -1050,6 +1134,88 @@ const removeLink = (data) => {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.overview-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.overview-card {
+  padding: 22px 24px;
+  border: 1px solid #e8edf5;
+  border-radius: 18px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow:
+    0 10px 24px rgba(15, 23, 42, 0.05),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.overview-card:hover {
+  box-shadow:
+    0 16px 32px rgba(15, 23, 42, 0.08),
+    0 2px 4px rgba(15, 23, 42, 0.05);
+}
+
+.overview-card__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.overview-card__icon--blue {
+  background-color: #edf4ff;
+  color: #2f6df6;
+}
+
+.overview-card__icon--green {
+  background-color: #eafaf2;
+  color: #14a36f;
+}
+
+.overview-card__icon--purple {
+  background-color: #f4edff;
+  color: #7c3aed;
+}
+
+.overview-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.overview-card__label {
+  font-size: 15px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.overview-card__value {
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 600;
+  color: #132449;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.overview-card__unit {
+  font-size: 15px;
+  font-weight: 400;
+  color: #64748b;
 }
 
 .toolbar-summary {
