@@ -371,7 +371,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue'
 import Sortable from 'sortablejs'
 import { cloneDeep } from 'lodash'
 import ChartsInfo from './components/chartsInfo/ChartsInfo.vue'
@@ -578,8 +578,18 @@ watch(
     }
   }
 )
+const handleVisibilityChange = () => {
+  if (document.visibilityState !== 'visible') {
+    return
+  }
+  !isRecycleBin.value ? queryPage() : queryRecycleBinPage()
+}
 onMounted(() => {
   initSortable('sortOptions')
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 const tableData = ref([])
 const pageParams = reactive({
