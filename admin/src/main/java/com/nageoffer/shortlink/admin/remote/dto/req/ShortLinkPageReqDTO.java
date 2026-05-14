@@ -32,6 +32,11 @@ public class ShortLinkPageReqDTO extends Page {
     private String gid;
 
     /**
+     * 搜索关键词
+     */
+    private String keyword;
+
+    /**
      * 排序标识
      */
     private String orderTag;

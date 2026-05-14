@@ -87,6 +87,7 @@ public interface ShortLinkActualRemoteService {
      */
     @GetMapping("/api/short-link/v1/page")
     Result<Page<ShortLinkPageRespDTO>> pageShortLink(@RequestParam("gid") String gid,
+                                                     @RequestParam(value = "keyword", required = false) String keyword,
                                                      @RequestParam("orderTag") String orderTag,
                                                      @RequestParam("current") Long current,
                                                      @RequestParam("size") Long size);

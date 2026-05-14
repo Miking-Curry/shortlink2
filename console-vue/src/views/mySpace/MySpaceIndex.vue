@@ -62,11 +62,33 @@
       <div class="table-box">
         <!-- 默认展示创建短链输入框和按钮 -->
         <div v-if="!isRecycleBin" class="buttons-box">
-          <div style="width: 100%; display: flex">
-            <!-- <el-input style="flex: 1; margin-right: 20px" placeholder="请输入http://或https://开头的连接或引用跳转程序"></el-input> -->
-            <el-button class="addButton" type="primary" style="width: 130px; margin-right: 10px"
-              @click="isAddSmallLink = true">创建短链</el-button>
-            <el-button style="width: 130px; margin-right: 10px" @click="isAddSmallLinks = true">批量创建</el-button>
+          <div class="toolbar-shell">
+            <div class="toolbar-summary">
+              <span class="toolbar-title">短链列表</span>
+              <span class="toolbar-subtitle">
+                {{ editableTabs?.[selectedIndex]?.name || '当前分组' }}，支持按短链、原链接或描述搜索
+              </span>
+            </div>
+            <div class="toolbar-controls">
+              <div class="toolbar-search">
+                <el-input
+                  v-model="searchKeyword"
+                  clearable
+                  placeholder="搜索短链、原链接或描述"
+                  @keyup.enter="submitSearch"
+                  @clear="resetSearch"
+                >
+                  <template #prefix>
+                    <el-icon><Search /></el-icon>
+                  </template>
+                </el-input>
+                <el-button @click="submitSearch">搜索</el-button>
+              </div>
+              <div class="toolbar-actions">
+                <el-button class="addButton" type="primary" @click="isAddSmallLink = true">创建短链</el-button>
+                <el-button @click="isAddSmallLinks = true">批量创建</el-button>
+              </div>
+            </div>
           </div>
         </div>
         <!-- 展示回收站信息 -->
@@ -371,7 +393,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue'
 import Sortable from 'sortablejs'
 import { cloneDeep } from 'lodash'
 import ChartsInfo from './components/chartsInfo/ChartsInfo.vue'
@@ -399,6 +421,7 @@ const createLink1Ref = ref()
 const createLink2Ref = ref()
 let selectedIndex = ref(0)
 const editableTabs = ref([])
+const searchKeyword = ref('')
 // 添加弹窗关闭后重新请求一下页面数据
 const afterAddLink = () => {
   setTimeout(() => {
@@ -578,14 +601,25 @@ watch(
     }
   }
 )
+const handleVisibilityChange = () => {
+  if (document.visibilityState !== 'visible') {
+    return
+  }
+  !isRecycleBin.value ? queryPage() : queryRecycleBinPage()
+}
 onMounted(() => {
   initSortable('sortOptions')
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 const tableData = ref([])
 const pageParams = reactive({
   gid: null,
   current: 1,
   size: 15,
+  keyword: null,
   orderTag: null
 })
 watch(
@@ -606,6 +640,19 @@ const queryPage = async () => {
   } else {
     ElMessage.error(res?.data.message)
   }
+}
+
+const submitSearch = () => {
+  pageParams.current = 1
+  pageParams.keyword = searchKeyword.value?.trim() || null
+  queryPage()
+}
+
+const resetSearch = () => {
+  searchKeyword.value = ''
+  pageParams.current = 1
+  pageParams.keyword = null
+  queryPage()
 }
 
 const handleSizeChange = () => {
@@ -967,12 +1014,13 @@ const removeLink = (data) => {
   .table-box {
     background-color: #ffffff;
     height: 100%;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
 
     .buttons-box {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.9);
     }
 
     .pagination-block {
@@ -994,6 +1042,55 @@ const removeLink = (data) => {
       }
     }
   }
+}
+
+.toolbar-shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toolbar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.toolbar-subtitle {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.toolbar-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar-search :deep(.el-input) {
+  width: 300px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .over-text {
