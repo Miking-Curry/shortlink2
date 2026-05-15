@@ -132,7 +132,7 @@
           <span>共{{ recycleBinNums }}条短链接</span>
         </div>
         <!-- 表格展示区域 -->
-        <el-table :data="tableData" height="calc(100vh - 240px)" style="width: calc(100vw - 230px)"
+        <el-table :data="tableData" style="width: calc(100vw - 230px)"
           :header-cell-style="{ background: '#f7f8fa', color: '#606266' }">
           <!-- 数据为空时展示的内容 -->
           <template #empty>
@@ -1213,6 +1213,8 @@ const removeLink = (data) => {
     border-radius: 14px;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 
     .buttons-box {
       padding: 18px 20px 14px;
@@ -1220,10 +1222,11 @@ const removeLink = (data) => {
     }
 
     .pagination-block {
-      position: absolute;
-      bottom: 4%;
-      left: 50%;
-      transform: translate(-50%, 0);
+      margin-top: auto;
+      padding: 12px 0;
+      background-color: #fff;
+      display: flex;
+      justify-content: center;
     }
 
     .recycle-bin-box {
